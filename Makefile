@@ -10,7 +10,7 @@ deploy_nfd_operator:
 	@./hack/run_test.sh deploy_nfd_operator
 
 .PHONY: deploy_gpu_operator
-deploy_gpu_operator:
+deploy_gpu_operator: deploy_nfd_operator
 	@./hack/run_test.sh deploy_gpu_operator $(CHANNEL)
 
 .PHONY: clean_artifact_dir
@@ -38,7 +38,18 @@ test_gpu_operator_metrics:
 	@./hack/run_test.sh test_gpu_operator_metrics
 
 .PHONY: e2e_gpu_test
-e2e_gpu_test: deploy_gpu_operator wait_for_gpu_operator run_gpu_workload test_gpu_operator_metrics
+e2e_gpu_test: deploy_gpu_operator gpu_full_test
+
+.PHONY: master_e2e_gpu_test
+master_e2e_gpu_test: deploy_gpu_operator_master gpu_full_test
+
+.PHONY: deploy_gpu_operator_master
+deploy_gpu_operator_master: deploy_nfd_operator
+	@./hack/run_test.sh deploy_gpu_operator_master
+
+.PHONY: gpu_full_test
+gpu_full_test: wait_for_gpu_operator run_gpu_workload test_gpu_operator_metrics
+
 
 .PHONY: scale_aws_gpu_nodes
 scale_aws_gpu_nodes:

@@ -4,8 +4,18 @@ USER root
 
 WORKDIR /test
 
+# Install dependencies: `operator-sdk`
+ARG OPERATOR_SDK_VERSION=v1.26.0
+ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
+RUN cd /usr/local/bin \
+    && curl -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
+    && mv operator-sdk_linux_amd64 operator-sdk \
+    && chmod +x operator-sdk
+
+# Install dependencies: `golangci-lint & ginkgo`
 RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.2 
 RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.5.1
+
 RUN mkdir /test-run-results && chmod 777 /test-run-results
 
 ENV ARTIFACT_DIR=/test-run-results

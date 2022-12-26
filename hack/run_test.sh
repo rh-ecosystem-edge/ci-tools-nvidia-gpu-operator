@@ -4,6 +4,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 export ARTIFACT_DIR=${ARTIFACT_DIR:="/tmp/gpu-test"}
 export KUBECONFIG=${KUBECONFIG:="$HOME/.kube/config"}
+export GPU_OPERATOR_MASTER_BUNDLE="registry.gitlab.com/nvidia/kubernetes/gpu-operator/staging/gpu-operator-bundle:master-latest"
 
 #####################
 ## Setup functions ##
@@ -28,10 +29,7 @@ function deploy_nfd_operator() {
 
 function deploy_gpu_operator() {
     print_test_title "${FUNCNAME[0]}"
-    echo
-    echo "=> Dependency: Deploy NFD Operator"
-    echo
-    deploy_nfd_operator
+    test_ocp_connection
     export GPU_CHANNEL="$1"
     echo
     echo "=> Deploying GPU Op. Channel ${GPU_CHANNEL}"
@@ -48,6 +46,16 @@ function scale_aws_gpu_nodes() {
     export GPU_REPLICAS="${REPLICAS:-}"
     GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
     ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./setup/ || error_and_exit "${FUNCNAME[0]} Test Failed." 4 "$1"
+}
+
+function deploy_gpu_operator_master() {
+    print_test_title "${FUNCNAME[0]}"
+    ART_DIR=$(dirgen "${FUNCNAME[0]}")
+    export DEPLOYED_FROM_MASTER=true
+	operator-sdk run bundle --timeout=10m -n "gpu-operator-test" \
+        --install-mode OwnNamespace \
+        ${GPU_OPERATOR_MASTER_BUNDLE} || error_and_exit "${FUNCNAME[0]} Test Failed" 5
+    deploy_gpu_operator "" || error_and_exit "${FUNCNAME[0]} Test Failed" 6
 }
 
 #####################
@@ -150,6 +158,7 @@ case "$1" in
     deploy_nfd_operator) "$@" | tee -a "${OUTPUT_FILE}";;
     deploy_gpu_operator) "$@" | tee -a "${OUTPUT_FILE}";;
     scale_aws_gpu_nodes) "$@" | tee -a "${OUTPUT_FILE}";;
+    deploy_gpu_operator_master) "$@" | tee -a "${OUTPUT_FILE}";;
 
 #####################
 ## Test  functions ##
