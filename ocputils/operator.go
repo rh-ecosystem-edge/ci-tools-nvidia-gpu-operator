@@ -19,7 +19,7 @@ func GetCatalogSource(config *rest.Config, namespace string, name string) (*oper
 	if err != nil {
 		return nil, err
 	}
-	return opClient.CatalogSources("openshift-marketplace").Get(context.TODO(), name, metav1.GetOptions{})
+	return opClient.CatalogSources(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func GetPackageManifest(config *rest.Config, namespace string, name string) (*pkgmanifestv1.PackageManifest, error) {
@@ -27,8 +27,7 @@ func GetPackageManifest(config *rest.Config, namespace string, name string) (*pk
 	if err != nil {
 		return nil, err
 	}
-	return pClient.PackageManifests("openshift-marketplace").Get(context.TODO(), name, metav1.GetOptions{})
-
+	return pClient.PackageManifests(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func GetOperatorGroup(config *rest.Config, namespace string, name string) (*operatorsv1.OperatorGroup, error) {

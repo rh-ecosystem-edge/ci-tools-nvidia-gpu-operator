@@ -37,6 +37,7 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 		nfdCatalogSource = "unset"
 		nfdCatalogSourceNS = "unset"
 		nfdCsvLabelSelector = "unset"
+		nfdPkgNS = "openshift-marketplace"
 
 		var err error
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)

@@ -2,7 +2,9 @@ package setup
 
 import (
 	"encoding/json"
-	"fmt"
+	"strings"
+	"time"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	gpuv1 "github.com/NVIDIA/gpu-operator/api/v1"
@@ -20,7 +22,7 @@ import (
 )
 
 const (
-	deployMasterEnvVar = "DEPLOY_GPU_OP_NVIDIA_MAIN"
+	deployedFromMaster = "DEPLOYED_FROM_MASTER"
 )
 
 var _ = Describe("deploy_gpu_operator :", Ordered, func() {
@@ -46,7 +48,7 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 	})
 	Context("from certified operators", Ordered, func() {
 		BeforeAll(func() {
-			if testutils.SkipTestIfEnvVarSet(deployMasterEnvVar, true) {
+			if testutils.SkipTestIfEnvVarSet(deployedFromMaster, true) {
 				return
 			}
 		})
@@ -62,10 +64,10 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 			var err error
 			pkg, err = ocputils.GetPackageManifest(config, catalogSourceNS, operatorPkgName)
 			Expect(err).ToNot(HaveOccurred())
-			testutils.Printf("PKG Manifest", "GPU Operator PackageManifest current version [%v]: %v", pkg.Status.Channels[0].Name, pkg.Status.Channels[0].CurrentCSV)
+			testutils.Printf("PKG Manifest", "GPU Operator PackageManifest default channel '%v'", pkg.Status.DefaultChannel)
 			if len(gpuOpChannel) == 0 {
-				// No channel specified - use latest
-				gpuOpChannel = pkg.Status.Channels[0].Name
+				// No channel specified - use defaultChannel
+				gpuOpChannel = pkg.Status.DefaultChannel
 			}
 			err = testutils.SaveAsJsonToArtifactsDir(pkg, "gpu_operator_packagemanifest.json")
 			Expect(err).ToNot(HaveOccurred())
@@ -90,16 +92,50 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 			err = testutils.SaveAsJsonToArtifactsDir(sub, "gpu_operator_subscription.json")
 			Expect(err).ToNot(HaveOccurred())
 		})
+	})
 
+	Context("post install setup", Ordered, func() {
+		var (
+			namespace string
+		)
+
+		It("get csv", func() {
+			err := testutils.ExecWithRetryBackoff("get gpu op csv", func() bool {
+				csvs, err := ocputils.GetCsvsByLabel(config, "", "")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(csvs.Items).ToNot(BeEmpty())
+				for _, csv := range csvs.Items {
+					if strings.Contains(csv.Name, "gpu-operator-certified") {
+						clusterServiceVersion = &csv
+						namespace = csv.Namespace
+						return true
+					}
+				}
+				return false
+			}, 30, 30*time.Second)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clusterServiceVersion).ToNot(BeNil(), "CSV not found")
+			Expect(namespace).ToNot(BeEmpty())
+		})
 		It("wait Until CSV is installed", func() {
-			labelSelector := fmt.Sprintf("operators.coreos.com/%v.%v", operatorPkgName, internal.Config.NameSpace)
-			csv, err := waitForCsvPhase(config, internal.Config.NameSpace, labelSelector, "Succeeded")
+			succeeded := operatorsv1alpha1.ClusterServiceVersionPhase("Succeeded")
+			testutils.Printf("Info", "GPU Operator name=%v namespace=%v version=%v", clusterServiceVersion.Name, clusterServiceVersion.Namespace, clusterServiceVersion.Spec.Version.String())
+			if clusterServiceVersion.Status.Phase != succeeded {
+				err := testutils.ExecWithRetryBackoff("Wait for CSV to be Succeeded", func() bool {
+					csv, err := ocputils.GetCsvByName(config, clusterServiceVersion.Namespace, clusterServiceVersion.Name)
+					if err != nil {
+						return false
+					}
+					clusterServiceVersion = csv
+					return clusterServiceVersion.Status.Phase == succeeded
+				}, 15, 30*time.Second)
+				Expect(err).ToNot(HaveOccurred())
+			}
+			Expect(clusterServiceVersion.Status.Phase).To(Equal(succeeded), "CSV Phase is not Succeeded")
+			err := testutils.SaveAsJsonToArtifactsDir(clusterServiceVersion, "gpu_operator_csv.json")
 			Expect(err).ToNot(HaveOccurred())
-			err = testutils.SaveAsJsonToArtifactsDir(csv, "gpu_operator_csv.json")
+			err = testutils.SaveToArtifactsDir([]byte(clusterServiceVersion.Spec.Version.String()), "gpu_operator_version.txt")
 			Expect(err).ToNot(HaveOccurred())
-			err = testutils.SaveToArtifactsDir([]byte(csv.Spec.Version.String()), "gpu_operator_version.txt")
-			Expect(err).ToNot(HaveOccurred())
-			clusterServiceVersion = &csv
 		})
 
 		It("deploy GPU ClusterPolicy", func() {
@@ -110,7 +146,7 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cpJson.Items).ToNot(BeEmpty())
 			unstructObj := cpJson.Items[0]
-			unstructObj.SetNamespace(internal.Config.NameSpace)
+			unstructObj.SetNamespace(namespace)
 
 			resp, err := ocputils.CreateDynamicResource(config, gpuv1.GroupVersion.WithResource("clusterpolicies"), &unstructObj, "")
 
@@ -121,17 +157,7 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 			err = testutils.SaveAsJsonToArtifactsDir(respCp, "gpu_cr_cluster_policy.json")
 			Expect(err).ToNot(HaveOccurred())
 		})
-	})
 
-	Context("NVIDIA's Main branch Bundle", Ordered, func() {
-		BeforeAll(func() {
-			if testutils.SkipTestIfEnvVarSet(deployMasterEnvVar, false) {
-				return
-			}
-		})
-		It("deploy Prebuilt nvidia bundle.", func() {
-
-		})
 	})
 
 })

@@ -42,10 +42,12 @@ var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
 			if strings.Contains(csv.Name, "gpu-operator-certified") {
 				gpuOperatorCsv = &csv
 				namespace = csv.Namespace
+				break
 			}
 		}
 		Expect(gpuOperatorCsv).ToNot(BeNil(), "CSV not found")
 		Expect(namespace).ToNot(BeEmpty())
+		testutils.Printf("Info", "GPU Operator name=%v namespace=%v version=%v", gpuOperatorCsv.Name, gpuOperatorCsv.Namespace, gpuOperatorCsv.Spec.Version.String())
 		if gpuOperatorCsv.Status.Phase != succeeded {
 			err = testutils.ExecWithRetryBackoff("Wait for CSV to be Succeeded", func() bool {
 				csv, err := ocputils.GetCsvByName(config, gpuOperatorCsv.Namespace, gpuOperatorCsv.Name)
@@ -58,10 +60,9 @@ var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 		}
 		Expect(gpuOperatorCsv.Status.Phase).To(Equal(succeeded), "CSV Phase is not Succeeded")
-		testutils.Printf("Info", "GPU Operator namespace = %v", namespace)
-		csvJson, err := json.MarshalIndent(gpuOperatorCsv, "", " ")
+		err = testutils.SaveAsJsonToArtifactsDir(gpuOperatorCsv, "gpu_operator_csv.json")
 		Expect(err).ToNot(HaveOccurred())
-		err = testutils.SaveToArtifactsDir(csvJson, "gpu_operator_csv.json")
+		err = testutils.SaveToArtifactsDir([]byte(gpuOperatorCsv.Spec.Version.String()), "gpu_operator_version.txt")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
