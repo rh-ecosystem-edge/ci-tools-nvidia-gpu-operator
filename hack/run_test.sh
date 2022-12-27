@@ -52,7 +52,7 @@ function deploy_gpu_operator_master() {
     print_test_title "${FUNCNAME[0]}"
     ART_DIR=$(dirgen "${FUNCNAME[0]}")
     export DEPLOYED_FROM_MASTER=true
-	operator-sdk run bundle --timeout=10m -n "gpu-operator-test" \
+    operator-sdk run bundle --timeout=10m -n "gpu-operator-test" \
         --install-mode OwnNamespace \
         ${GPU_OPERATOR_MASTER_BUNDLE} || error_and_exit "${FUNCNAME[0]} Test Failed" 5
     deploy_gpu_operator "" || error_and_exit "${FUNCNAME[0]} Test Failed" 6

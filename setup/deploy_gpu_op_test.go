@@ -64,10 +64,10 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 			var err error
 			pkg, err = ocputils.GetPackageManifest(config, catalogSourceNS, operatorPkgName)
 			Expect(err).ToNot(HaveOccurred())
-			testutils.Printf("PKG Manifest", "GPU Operator PackageManifest current version [%v]: %v", pkg.Status.Channels[0].Name, pkg.Status.Channels[0].CurrentCSV)
+			testutils.Printf("PKG Manifest", "GPU Operator PackageManifest default channel '%v'", pkg.Status.DefaultChannel)
 			if len(gpuOpChannel) == 0 {
-				// No channel specified - use latest
-				gpuOpChannel = pkg.Status.Channels[0].Name
+				// No channel specified - use defaultChannel
+				gpuOpChannel = pkg.Status.DefaultChannel
 			}
 			err = testutils.SaveAsJsonToArtifactsDir(pkg, "gpu_operator_packagemanifest.json")
 			Expect(err).ToNot(HaveOccurred())
