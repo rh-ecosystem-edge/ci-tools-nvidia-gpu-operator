@@ -47,10 +47,10 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 	It("check NFD PackageManifest", func() {
 		pkg, err := ocputils.GetPackageManifest(config, nfdPkgNS, "nfd")
 		Expect(err).ToNot(HaveOccurred())
-		nfdChannel = pkg.Status.Channels[0].Name
+		nfdChannel = pkg.Status.DefaultChannel
 		nfdCatalogSource = pkg.Status.CatalogSource
 		nfdCatalogSourceNS = pkg.Status.CatalogSourceNamespace
-		testutils.Printf("PKG Manifest", "NFD Operator PackageManifest current channel/version [%v]: %v", nfdChannel, pkg.Status.Channels[0].CurrentCSV)
+		testutils.Printf("PKG Manifest", "NFD Operator PackageManifest defaultchannel '%v'", nfdChannel)
 		err = testutils.SaveAsJsonToArtifactsDir(pkg, "nfd_packagemanifest.json")
 		Expect(err).ToNot(HaveOccurred())
 	})
