@@ -142,7 +142,7 @@ function ginko_args() {
     ART_DIR="$1"
     shift
     NAME="$1"
-    echo "--output-dir=$ART_DIR --junit-report=junit_report_${NAME}.xml --fail-fast --succinct --focus $NAME"
+    echo "--output-dir=$ART_DIR --junit-report=junit_report_${NAME}.xml --fail-fast --succinct --no-color --focus $NAME"
 }
 
 ### Init output folder

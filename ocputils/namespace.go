@@ -5,6 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -35,4 +36,11 @@ func GetNamespace(config *rest.Config, name string) (*corev1.Namespace, error) {
 		return nil, err
 	}
 	return clientset.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+}
+func PatchNamespace(config *rest.Config, name string, data []byte, pt types.PatchType) (*corev1.Namespace, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return clientset.CoreV1().Namespaces().Patch(context.TODO(), name, pt, data, metav1.PatchOptions{})
 }

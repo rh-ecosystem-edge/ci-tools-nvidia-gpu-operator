@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	machinesetv1b1 "github.com/openshift/api/machine/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -100,7 +101,7 @@ var _ = Describe("scale_aws_gpu_nodes : ", Ordered, func() {
 	It("ensure number of replicas on MachineSet", func() {
 		if gpuMachineset.Spec.Replicas != &replicas {
 			patch := fmt.Sprintf("{\"spec\": {\"replicas\": %v}}", replicas)
-			ms, err := ocputils.PatchMachineSet(config, gpuMachineset, []byte(patch))
+			ms, err := ocputils.PatchMachineSet(config, gpuMachineset, []byte(patch), types.MergePatchType)
 			Expect(err).ToNot(HaveOccurred())
 			gpuMachineset = ms
 		}
