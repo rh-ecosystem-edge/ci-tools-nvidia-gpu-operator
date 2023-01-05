@@ -65,12 +65,12 @@ func GetWorkerMachineSets(config *rest.Config, namespace string) (*machinev1beta
 	return list, nil
 }
 
-func PatchMachineSet(config *rest.Config, ms *machinev1beta1.MachineSet, data []byte) (*machinev1beta1.MachineSet, error) {
+func PatchMachineSet(config *rest.Config, ms *machinev1beta1.MachineSet, data []byte, pt types.PatchType) (*machinev1beta1.MachineSet, error) {
 	clientset, err := machinev1beta1client.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	return clientset.MachineSets(ms.Namespace).Patch(context.TODO(), ms.Name, types.MergePatchType, data, metav1.PatchOptions{})
+	return clientset.MachineSets(ms.Namespace).Patch(context.TODO(), ms.Name, pt, data, metav1.PatchOptions{})
 }
 
 func GetMachineSet(config *rest.Config, namespace string, name string) (*machinev1beta1.MachineSet, error) {

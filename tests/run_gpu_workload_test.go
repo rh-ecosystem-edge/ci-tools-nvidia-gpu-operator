@@ -40,7 +40,6 @@ var _ = Describe("run_gpu_workload :", Ordered, func() {
 	})
 
 	It("create gpu-burn namespace", func() {
-		By("fooo")
 		ns, err := ocputils.CreateNamespace(config, namespace)
 		Expect(err).ToNot(HaveOccurred())
 		err = testutils.SaveAsJsonToArtifactsDir(ns, "gpu_burn_namespace.json")

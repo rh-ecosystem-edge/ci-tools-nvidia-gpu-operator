@@ -1,14 +1,18 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/blang/semver/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/operator-framework/api/pkg/lib/version"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -25,18 +29,21 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 		kubeconfig        string
 		namespace         string
 		dcgmPodServerPort string
+		gpuOpVersion      *version.OperatorVersion
+		monitoringLabel   string
 	)
 
 	BeforeAll(func() {
 		kubeconfig = internal.Config.KubeconfigPath
 		dcgmPodServerPort = "9400"
+		monitoringLabel = "openshift.io/cluster-monitoring"
 
 		var err error
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("capture GPU Operator namespace", func() {
+	It("capture GPU Operator namespace and version", func() {
 		csvs, err := ocputils.GetCsvsByLabel(config, "", "")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(csvs.Items).ToNot(BeEmpty())
@@ -44,16 +51,46 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 			if strings.Contains(csv.Name, "gpu-operator-certified") {
 				gpuOperatorCsv = &csv
 				namespace = csv.Namespace
+				gpuOpVersion = &csv.Spec.Version
+				break
 			}
 		}
 		Expect(gpuOperatorCsv).ToNot(BeNil(), "CSV not found")
 		Expect(namespace).ToNot(BeEmpty())
+		Expect(gpuOpVersion).ToNot(BeNil())
+		err = testutils.SaveAsJsonToArtifactsDir(gpuOperatorCsv, "gpu-operator-csv.json")
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("ensure namespace has the openshift.io/cluster-monitoring label (for versions <= 1.9)", func() {
+		versionWithoutLabel := semver.Version{Major: 1, Minor: 9, Patch: 1}
+		testutils.Printf("Info", "GPU operator version: %v", gpuOpVersion)
+		if gpuOpVersion.Version.GT(versionWithoutLabel) {
+			msg := fmt.Sprintf("Installed version is %v, namespace should have the lable already - skipping test", gpuOpVersion.String())
+			Skip(msg)
+			return
+		}
+		ns, err := ocputils.GetNamespace(config, namespace)
+		Expect(err).ToNot(HaveOccurred())
+		filenameBase := "gpu-operator-namespace"
+		fileNameBefore := fmt.Sprintf("%s-before-label-patch.json", filenameBase)
+		fileNameAfter := fmt.Sprintf("%s-after-label-patch.json", filenameBase)
+		err = testutils.SaveAsJsonToArtifactsDir(ns, fileNameBefore)
+		Expect(err).ToNot(HaveOccurred())
+		ns.ObjectMeta.Labels[monitoringLabel] = "true"
+		jsonLabels, err := json.Marshal(ns.ObjectMeta.Labels)
+		Expect(err).ToNot(HaveOccurred())
+		patch := fmt.Sprintf("{\"metadata\": {\"labels\": %v}}", string(jsonLabels))
+		ns, err = ocputils.PatchNamespace(config, ns.Name, []byte(patch), types.MergePatchType)
+		Expect(err).ToNot(HaveOccurred())
+		err = testutils.SaveAsJsonToArtifactsDir(ns, fileNameAfter)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("check if the GPU Operator namespace has the openshift.io/cluster-monitoring label", func() {
 		ns, err := ocputils.GetNamespace(config, namespace)
 		Expect(err).ToNot(HaveOccurred())
-		val, ok := ns.Labels["openshift.io/cluster-monitoring"]
+		val, ok := ns.Labels[monitoringLabel]
 		Expect(ok).To(BeTrue(), "Namespace has no label openshift.io/cluster-monitoring")
 		Expect(val).To(Equal("true"), "openshift.io/cluster-monitoring label value is not true")
 		err = testutils.SaveAsJsonToArtifactsDir(ns, "gpu_operator_namespace.json")
@@ -118,11 +155,22 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 	})
 
 	It("check that prometheus is picking up DCGM service monitor", func() {
-		prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
-		Expect(err).ToNot(HaveOccurred())
-		secretVal, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(strings.Contains(*secretVal, "(nvidia-dcgm-exporter);true")).To(BeTrue(), "Prometheus is not picking up DCGM metrics")
+		serviceMonitor := fmt.Sprintf("job_name: serviceMonitor/%v/nvidia-dcgm-exporter", namespace)
+		err := testutils.ExecWithRetryBackoff("DCGM prometheus pickup", func() bool {
+			prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
+			if err != nil {
+				testutils.Printf("Error", "%v", err)
+				return false
+			}
+			promyml, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
+			if err != nil {
+				testutils.Printf("Error", "%v", err)
+				return false
+			}
+			_ = testutils.SaveToArtifactsDir([]byte(*promyml), "prometheus.yaml.gz.txt")
+			return strings.Contains(*promyml, serviceMonitor)
+		}, 30, 30*time.Second)
+		Expect(err).ToNot(HaveOccurred(), "Prometheus is not picking up DCGM metrics")
 	})
 
 })
