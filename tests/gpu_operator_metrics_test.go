@@ -21,22 +21,24 @@ import (
 	"ci-tools-nvidia-gpu-operator/testutils"
 )
 
+const (
+	dcgmPodServerPort = "9400"
+	nodeStatusPort    = "8000"
+	gpuOpMetricsPort  = "8080"
+	monitoringLabel   = "openshift.io/cluster-monitoring"
+)
+
 var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 	var (
-		config            *rest.Config
-		gpuOperatorCsv    *operatorsv1alpha1.ClusterServiceVersion = nil
-		dcgmPods          []corev1.Pod
-		kubeconfig        string
-		namespace         string
-		dcgmPodServerPort string
-		gpuOpVersion      *version.OperatorVersion
-		monitoringLabel   string
+		config         *rest.Config
+		gpuOperatorCsv *operatorsv1alpha1.ClusterServiceVersion = nil
+		kubeconfig     string
+		namespace      string
+		gpuOpVersion   *version.OperatorVersion
 	)
 
 	BeforeAll(func() {
 		kubeconfig = internal.Config.KubeconfigPath
-		dcgmPodServerPort = "9400"
-		monitoringLabel = "openshift.io/cluster-monitoring"
 
 		var err error
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
@@ -97,80 +99,171 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("validate that the DCGM metrics are correctly exposed", func() {
-		pods, err := ocputils.GetPodsByLabel(config, namespace, "app=nvidia-dcgm-exporter")
-		Expect(err).ToNot(HaveOccurred())
-		dcgmPods = pods.Items
-		podsReady := true
-		for _, pod := range pods.Items {
-			podsReady = pod.Status.Phase == corev1.PodRunning && podsReady
-			podFileName := fmt.Sprintf("pod_%v.json", pod.Name)
-			err := testutils.SaveAsJsonToArtifactsDir(pod, podFileName)
+	Context("DCGM metrics", func() {
+		var dcgmPods []corev1.Pod
+
+		It("validate that the DCGM metrics are correctly exposed", func() {
+			pods, err := ocputils.GetPodsByLabel(config, namespace, "app=nvidia-dcgm-exporter")
 			Expect(err).ToNot(HaveOccurred())
-		}
-		Expect(podsReady).To(BeTrue(), "One or more DCGM exporters is not ready")
+			dcgmPods = pods.Items
+			podsReady := true
+			for _, pod := range pods.Items {
+				podsReady = pod.Status.Phase == corev1.PodRunning && podsReady
+				podFileName := fmt.Sprintf("pod_%v.json", pod.Name)
+				err := testutils.SaveAsJsonToArtifactsDir(pod, podFileName)
+				Expect(err).ToNot(HaveOccurred())
+			}
+			Expect(podsReady).To(BeTrue(), "One or more DCGM exporters is not ready")
+		})
+
+		It("wait for DCGM exporter logs to show valid state", func() {
+			podStates := map[string]bool{}
+			err := testutils.ExecWithRetryBackoff("Waiting for valid output", func() bool {
+				for _, pod := range dcgmPods {
+					if val, ok := podStates[pod.Name]; ok && val {
+						continue
+					}
+					output_resp, err := ocputils.GetPodLogs(config, pod, false)
+					if err != nil {
+						return false
+					}
+					output := *output_resp
+					filename := fmt.Sprintf("pod_%v_output.log", pod.Name)
+					_ = testutils.SaveToArtifactsDir([]byte(output), filename)
+					match1 := strings.Contains(output, "DCGM successfully initialized!")
+					match2 := strings.Contains(output, "Kubernetes metrics collection enabled!")
+					match3 := strings.Contains(output, "Starting webserver")
+					podStates[pod.Name] = match1 && match2 && match3
+				}
+				if len(podStates) != len(dcgmPods) {
+					return false
+				}
+				for _, ok := range podStates {
+					if !ok {
+						return false
+					}
+				}
+				return true
+			}, 15, 30*time.Second)
+
+			Expect(err).ToNot(HaveOccurred(), "Not all DCGM exporters are ready")
+		})
+
+		It("check the DCGM is exporting scrape pool", func() {
+			pod := dcgmPods[0]
+			resp, err := ocputils.PodProxyGet(config, pod, dcgmPodServerPort, "metrics", map[string]string{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(resp)).ToNot(BeEmpty(), "scrape pool is empty")
+			err = testutils.SaveToArtifactsDir(resp, "metrics-dcgm-exporter.txt")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("check that prometheus is picking up DCGM service monitor", func() {
+			serviceMonitor := fmt.Sprintf("job_name: serviceMonitor/%v/nvidia-dcgm-exporter", namespace)
+			err := testutils.ExecWithRetryBackoff("DCGM prometheus pickup", func() bool {
+				prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				promyml, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				_ = testutils.SaveToArtifactsDir([]byte(*promyml), "prometheus.yaml.gz.txt")
+				return strings.Contains(*promyml, serviceMonitor)
+			}, 30, 30*time.Second)
+			Expect(err).ToNot(HaveOccurred(), "Prometheus is not picking up DCGM metrics")
+		})
 	})
 
-	It("wait for DCGM exporter logs to show valid state", func() {
-		podStates := map[string]bool{}
-		err := testutils.ExecWithRetryBackoff("Waiting for valid output", func() bool {
-			for _, pod := range dcgmPods {
-				if val, ok := podStates[pod.Name]; ok && val {
-					continue
-				}
-				output_resp, err := ocputils.GetPodLogs(config, pod, false)
+	Context("node metrics", func() {
+		var nodeStatusExpPod corev1.Pod
+
+		It("wait for node-status-exporter to start running", func() {
+			err := testutils.ExecWithRetryBackoff("node-status-exporter status", func() bool {
+				pods, err := ocputils.GetPodsByLabel(config, namespace, "app=nvidia-node-status-exporter")
 				if err != nil {
 					return false
 				}
-				output := *output_resp
-				filename := fmt.Sprintf("pod_%v_output.log", pod.Name)
-				_ = testutils.SaveToArtifactsDir([]byte(output), filename)
-				match1 := strings.Contains(output, "DCGM successfully initialized!")
-				match2 := strings.Contains(output, "Kubernetes metrics collection enabled!")
-				match3 := strings.Contains(output, "Starting webserver")
-				podStates[pod.Name] = match1 && match2 && match3
-			}
-			if len(podStates) != len(dcgmPods) {
-				return false
-			}
-			for _, ok := range podStates {
-				if !ok {
+				// Test one pod only
+				if len(pods.Items) < 1 {
 					return false
 				}
-			}
-			return true
-		}, 15, 30*time.Second)
+				nodeStatusExpPod = pods.Items[0]
+				filename := fmt.Sprintf("pod-%v.json", nodeStatusExpPod.Name)
+				_ = testutils.SaveAsJsonToArtifactsDir(nodeStatusExpPod, filename)
+				return nodeStatusExpPod.Status.Phase == corev1.PodRunning
+			}, 2, 30*time.Second)
+			Expect(err).ToNot(HaveOccurred())
+		})
 
-		Expect(err).ToNot(HaveOccurred(), "Not all DCGM exporters are ready")
+		It("fetch node-status-exporter metrics", func() {
+			resp, err := ocputils.PodProxyGet(config, nodeStatusExpPod, nodeStatusPort, "metrics", map[string]string{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(resp)).ToNot(BeEmpty(), "scrape pool is empty")
+			err = testutils.SaveToArtifactsDir(resp, "metrics-node-status-exporter.txt")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("check that prometheus is picking up node-status-exporter service monitor", func() {
+			serviceMonitor := fmt.Sprintf("job_name: serviceMonitor/%v/nvidia-node-status-exporter", namespace)
+			err := testutils.ExecWithRetryBackoff("node-status-exporter prometheus pickup", func() bool {
+				prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				promyml, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				_ = testutils.SaveToArtifactsDir([]byte(*promyml), "prometheus.yaml.gz.txt")
+				return strings.Contains(*promyml, serviceMonitor)
+			}, 30, 30*time.Second)
+			Expect(err).ToNot(HaveOccurred(), "Prometheus is not picking up node-status-monitor metrics")
+		})
 	})
 
-	It("check the DCGM is exporting scrape pool", func() {
-		pod := dcgmPods[0]
-		resp, err := ocputils.PodProxyGet(config, pod, dcgmPodServerPort, "metrics", map[string]string{})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(string(resp)).ToNot(BeEmpty(), "scrape pool is empty")
-		outputFileName := fmt.Sprintf("%v_metrics_respose.txt", pod.Name)
-		err = testutils.SaveToArtifactsDir(resp, outputFileName)
-		Expect(err).ToNot(HaveOccurred())
-	})
+	Context("operator metrics", func() {
+		var gpuOpPod corev1.Pod
 
-	It("check that prometheus is picking up DCGM service monitor", func() {
-		serviceMonitor := fmt.Sprintf("job_name: serviceMonitor/%v/nvidia-dcgm-exporter", namespace)
-		err := testutils.ExecWithRetryBackoff("DCGM prometheus pickup", func() bool {
-			prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
-			if err != nil {
-				testutils.Printf("Error", "%v", err)
-				return false
-			}
-			promyml, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
-			if err != nil {
-				testutils.Printf("Error", "%v", err)
-				return false
-			}
-			_ = testutils.SaveToArtifactsDir([]byte(*promyml), "prometheus.yaml.gz.txt")
-			return strings.Contains(*promyml, serviceMonitor)
-		}, 30, 30*time.Second)
-		Expect(err).ToNot(HaveOccurred(), "Prometheus is not picking up DCGM metrics")
+		It("get gpu-operator pod", func() {
+			pods, err := ocputils.GetPodsByLabel(config, namespace, "app=gpu-operator")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pods.Items).NotTo(BeEmpty())
+			gpuOpPod = pods.Items[0]
+			_ = testutils.SaveAsJsonToArtifactsDir(gpuOpPod, "pod-gpu-operator.json")
+		})
+
+		It("fetch gpu-operator metrics", func() {
+			resp, err := ocputils.PodProxyGet(config, gpuOpPod, gpuOpMetricsPort, "metrics", map[string]string{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(resp)).ToNot(BeEmpty(), "scrape pool is empty")
+			err = testutils.SaveToArtifactsDir(resp, "metrics-gpu-operator.txt")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("check that prometheus is picking up gpu-operator service monitor", func() {
+			serviceMonitor := fmt.Sprintf("job_name: serviceMonitor/%v/gpu-operator", namespace)
+			err := testutils.ExecWithRetryBackoff("gpu-operator prometheus pickup", func() bool {
+				prometheusSecret, err := ocputils.GetSecret(config, "openshift-monitoring", "prometheus-k8s")
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				promyml, err := ocputils.GetSecretValue(prometheusSecret, "prometheus.yaml.gz", true)
+				if err != nil {
+					testutils.Printf("Error", "%v", err)
+					return false
+				}
+				_ = testutils.SaveToArtifactsDir([]byte(*promyml), "prometheus.yaml.gz.txt")
+				return strings.Contains(*promyml, serviceMonitor)
+			}, 30, 30*time.Second)
+			Expect(err).ToNot(HaveOccurred(), "Prometheus is not picking up gpu-operator metrics")
+		})
 	})
 
 })
