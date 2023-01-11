@@ -58,6 +58,13 @@ function deploy_gpu_operator_master() {
     deploy_gpu_operator "" || error_and_exit "${FUNCNAME[0]} Test Failed" 6
 }
 
+function ocm_addons_setup() {
+    print_test_title "${FUNCNAME[0]}"
+    ART_DIR=$(dirgen "${FUNCNAME[0]}")
+    GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
+    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./setup/ || error_and_exit "${FUNCNAME[0]} Test Failed." 6
+}
+
 #####################
 ## Test  functions ##
 #####################
@@ -98,11 +105,9 @@ function test_gpu_operator_metrics() {
     ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ || error_and_exit "${FUNCNAME[0]} Test Failed." 15 "$1"
 }
 
-
 ########################
 ## General  functions ##
 ########################
-
 function clean_artifact_dir() {
     print_test_title "${FUNCNAME[0]}"
     rm -rf "${ARTIFACT_DIR}"/FAIL
@@ -159,6 +164,7 @@ case "$1" in
     deploy_gpu_operator) "$@" | tee -a "${OUTPUT_FILE}";;
     scale_aws_gpu_nodes) "$@" | tee -a "${OUTPUT_FILE}";;
     deploy_gpu_operator_master) "$@" | tee -a "${OUTPUT_FILE}";;
+    ocm_addons_setup) "$@" | tee -a "${OUTPUT_FILE}";;
 
 #####################
 ## Test  functions ##
@@ -168,7 +174,6 @@ case "$1" in
     test_gpu_operator_metrics) "$@" | tee -a "${OUTPUT_FILE}";;
     run_gpu_workload) "$@" | tee -a "${OUTPUT_FILE}";;
     check_exported_metrics) "$@" | tee -a "${OUTPUT_FILE}";;
-
 
     clean_artifact_dir) "$@";exit;;
     *) error_and_exit "Invalid operation $1." 44 | tee -a "${OUTPUT_FILE}";;
