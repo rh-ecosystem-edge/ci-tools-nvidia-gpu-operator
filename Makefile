@@ -55,6 +55,12 @@ gpu_full_test: wait_for_gpu_operator run_gpu_workload test_gpu_operator_metrics
 scale_aws_gpu_nodes:
 	@INSTANCE_TYPE=$(INSTANCE_TYPE) REPLICAS=$(REPLICAS) ./hack/run_test.sh scale_aws_gpu_nodes
 
+.PHONY: ocm_addons_setup
+ocm_addons_setup:
+	@./hack/run_test.sh ocm_addons_setup
+
+.PHONY: osde2e_test
+osde2e_test: ocm_addons_setup gpu_full_test
 
 .PHONY: lint
 lint:
