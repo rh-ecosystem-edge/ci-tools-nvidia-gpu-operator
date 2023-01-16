@@ -60,7 +60,12 @@ ocm_addons_setup:
 	@./hack/run_test.sh ocm_addons_setup
 
 .PHONY: osde2e_test
-osde2e_test: ocm_addons_setup gpu_full_test
+osde2e_test: test_ocp_connection
+	@make ocm_addons_setup gpu_full_test; make gpu_addon_must_gather
+
+.PHONY: gpu_addon_must_gather
+gpu_addon_must_gather:
+	@./hack/run_test.sh gpu_addon_must_gather
 
 .PHONY: lint
 lint:

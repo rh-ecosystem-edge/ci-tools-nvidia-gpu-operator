@@ -102,7 +102,14 @@ function test_gpu_operator_metrics() {
     print_test_title "${FUNCNAME[0]}"
     ART_DIR=$(dirgen "${FUNCNAME[0]}")
     GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
-    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ || error_and_exit "${FUNCNAME[0]} Test Failed." 15 "$1"
+    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ || error_and_exit "${FUNCNAME[0]} Test Failed." 15
+}
+
+function gpu_addon_must_gather() {
+    print_test_title "${FUNCNAME[0]}"
+    ART_DIR=$(dirgen "${FUNCNAME[0]}")
+    GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
+    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ || error_and_exit "${FUNCNAME[0]} Test Failed." 16
 }
 
 ########################
@@ -174,6 +181,7 @@ case "$1" in
     test_gpu_operator_metrics) "$@" | tee -a "${OUTPUT_FILE}";;
     run_gpu_workload) "$@" | tee -a "${OUTPUT_FILE}";;
     check_exported_metrics) "$@" | tee -a "${OUTPUT_FILE}";;
+    gpu_addon_must_gather) "$@" | tee -a "${OUTPUT_FILE}";;
 
     clean_artifact_dir) "$@";exit;;
     *) error_and_exit "Invalid operation $1." 44 | tee -a "${OUTPUT_FILE}";;
