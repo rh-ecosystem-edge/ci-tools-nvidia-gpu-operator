@@ -18,6 +18,11 @@ import (
 	"ci-tools-nvidia-gpu-operator/testutils"
 )
 
+const (
+	nfdCrName   = "nfd-cr-testing"
+	nfdResource = "nodefeaturediscoveries"
+)
+
 var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 	var (
 		config              *rest.Config
@@ -98,21 +103,21 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: internal.Config.NameSpace,
-				Name:      "nfd-cr-testing",
+				Name:      nfdCrName,
 			},
 		}
 
-		resp, err := ocputils.CreateDynamicResource(config, nfdv1.GroupVersion.WithResource("nodefeaturediscoveries"), nfd, nfd.Namespace)
+		resp, err := ocputils.CreateDynamicResource(config, nfdv1.GroupVersion.WithResource(nfdResource), nfd, nfd.Namespace)
 		Expect(err).ToNot(HaveOccurred())
 		var respNfd nfdv1.NodeFeatureDiscovery = nfdv1.NodeFeatureDiscovery{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(resp.UnstructuredContent(), &respNfd)
 		Expect(err).ToNot(HaveOccurred())
-		err = testutils.SaveAsJsonToArtifactsDir(respNfd, "nfd_cr.json")
+		err = testutils.SaveAsJsonToArtifactsDir(respNfd, "nfd_cr_create_response.json")
 		Expect(err).ToNot(HaveOccurred())
 
 	})
 
-	It("wait for NFD labels", func() {
+	It("wait for NFD labels and capture nfd cr state", func() {
 		err := testutils.ExecWithRetryBackoff("wait for NFD labels", func() bool {
 			nodes, err := ocputils.GetNodesByLabel(config, "feature.node.kubernetes.io/system-os_release.ID=rhcos")
 			if err != nil {
@@ -120,6 +125,17 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 			}
 			return len(nodes.Items) > 0
 		}, 20, 30*time.Second)
-		Expect(err).ToNot(HaveOccurred())
+
+		defer Expect(err).ToNot(HaveOccurred())
+		if err != nil {
+			testutils.Printf("error", "Failed to find labels on nodes. %v", err)
+		}
+
+		// Regarless if successful, we want to have the CR in artifacts
+		nfdCr := &nfdv1.NodeFeatureDiscovery{}
+		e := ocputils.GetDynamicResource(config, nfdv1.GroupVersion.WithResource(nfdResource), internal.Config.NameSpace, nfdCrName, nfdCr)
+		Expect(e).ToNot(HaveOccurred())
+		e = testutils.SaveAsJsonToArtifactsDir(nfdCr, "nfd_cr.json")
+		Expect(e).ToNot(HaveOccurred())
 	})
 })

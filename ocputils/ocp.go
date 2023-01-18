@@ -84,14 +84,14 @@ func ListDynamicResource(config *rest.Config, resource schema.GroupVersionResour
 	return dClient.Resource(resource).List(context.TODO(), metav1.ListOptions{})
 }
 
-func GetDynamicRecource[T runtime.Object](config *rest.Config, resource schema.GroupVersionResource, namespace string, name string, obj T) error {
+func GetDynamicResource[T runtime.Object](config *rest.Config, resource schema.GroupVersionResource, namespace string, name string, obj T) error {
 	dClient, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return err
 	}
-	resp, err := dClient.Resource(resource).Get(context.TODO(), name, metav1.GetOptions{})
+	resp, err := dClient.Resource(resource).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(resp.UnstructuredContent(), &obj)
+	return runtime.DefaultUnstructuredConverter.FromUnstructured(resp.UnstructuredContent(), obj)
 }
