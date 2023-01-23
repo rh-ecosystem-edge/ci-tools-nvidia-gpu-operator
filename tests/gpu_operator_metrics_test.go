@@ -92,11 +92,11 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 	It("check if the GPU Operator namespace has the openshift.io/cluster-monitoring label", func() {
 		ns, err := ocputils.GetNamespace(config, namespace)
 		Expect(err).ToNot(HaveOccurred())
+		err = testutils.SaveAsJsonToArtifactsDir(ns, "gpu_operator_namespace.json")
+		Expect(err).ToNot(HaveOccurred())
 		val, ok := ns.Labels[monitoringLabel]
 		Expect(ok).To(BeTrue(), "Namespace has no label openshift.io/cluster-monitoring")
 		Expect(val).To(Equal("true"), "openshift.io/cluster-monitoring label value is not true")
-		err = testutils.SaveAsJsonToArtifactsDir(ns, "gpu_operator_namespace.json")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("DCGM metrics", func() {

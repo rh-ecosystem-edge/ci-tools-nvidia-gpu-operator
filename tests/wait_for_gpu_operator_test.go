@@ -126,4 +126,11 @@ var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
 
 		Expect(validatorDs.Status.NumberReady).To(Equal(validatorDs.Status.DesiredNumberScheduled), "Validator DS is not ready.")
 	})
+
+	It("capture namespace", func() {
+		ns, err := ocputils.GetNamespace(config, namespace)
+		Expect(err).ToNot(HaveOccurred())
+		err = testutils.SaveAsJsonToArtifactsDir(ns, "namespace.json")
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

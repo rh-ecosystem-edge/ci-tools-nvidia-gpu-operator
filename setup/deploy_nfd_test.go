@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 	nfdv1 "github.com/openshift/cluster-nfd-operator/api/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -33,6 +32,7 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 		nfdCatalogSourceNS  string
 		nfdCsvLabelSelector string
 		nfdPkgNS            string
+		nfdAlmExample       string
 	)
 
 	BeforeAll(func() {
@@ -66,6 +66,7 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 		}
 		Expect(ns).ToNot(BeNil())
+		_ = testutils.SaveAsJsonToArtifactsDir(ns, "namespace.json")
 	})
 
 	It("create Operator Group", func() {
@@ -86,28 +87,24 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 		nfdCsvLabelSelector = fmt.Sprintf("operators.coreos.com/%v.%v", nfdOpName, internal.Config.NameSpace)
 	})
 
-	It("wait Until CSV is installed", func() {
+	It("wait until CSV is installed and capture alm example", func() {
 		csv, err := waitForCsvPhase(config, internal.Config.NameSpace, nfdCsvLabelSelector, "Succeeded")
 		Expect(err).ToNot(HaveOccurred())
 		err = testutils.SaveAsJsonToArtifactsDir(csv, "nfd_csv.json")
 		Expect(err).ToNot(HaveOccurred())
 		err = testutils.SaveToArtifactsDir([]byte(csv.Spec.Version.String()), "nfd_version.txt")
 		Expect(err).ToNot(HaveOccurred())
+		nfdAlmExample, err = ocputils.GetAlmExamples(&csv)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(nfdAlmExample).ToNot(BeEmpty())
 	})
 
-	It("deploy NFD CR", func() {
-		nfd := &nfdv1.NodeFeatureDiscovery{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "NodeFeatureDiscovery",
-				APIVersion: nfdv1.GroupVersion.String(),
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: internal.Config.NameSpace,
-				Name:      nfdCrName,
-			},
-		}
-
-		resp, err := ocputils.CreateDynamicResource(config, nfdv1.GroupVersion.WithResource(nfdResource), nfd, nfd.Namespace)
+	It("deploy NFD CR based on alm example", func() {
+		unstructObj, err := getUnstructuredFromAlmExample(nfdAlmExample)
+		Expect(err).ToNot(HaveOccurred())
+		unstructObj.SetNamespace(internal.Config.NameSpace)
+		unstructObj.SetName(nfdCrName)
+		resp, err := ocputils.CreateDynamicResource(config, nfdv1.GroupVersion.WithResource(nfdResource), unstructObj, internal.Config.NameSpace)
 		Expect(err).ToNot(HaveOccurred())
 		var respNfd nfdv1.NodeFeatureDiscovery = nfdv1.NodeFeatureDiscovery{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(resp.UnstructuredContent(), &respNfd)

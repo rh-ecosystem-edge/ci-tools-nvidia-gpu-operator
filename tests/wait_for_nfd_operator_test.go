@@ -70,4 +70,11 @@ var _ = Describe("wait_for_nfd_operator :", Ordered, func() {
 		err = testutils.SaveAsJsonToArtifactsDir(node, "first_worker_node.json")
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("capture namespace", func() {
+		ns, err := ocputils.GetNamespace(config, namespace)
+		Expect(err).ToNot(HaveOccurred())
+		err = testutils.SaveAsJsonToArtifactsDir(ns, "namespace.json")
+		Expect(err).ToNot(HaveOccurred())
+	})
 })
