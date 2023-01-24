@@ -1,7 +1,6 @@
 package setup
 
 import (
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	pkgmanifestv1 "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -46,6 +45,16 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("ensure namespace exists", func() {
+		ns, err := ocputils.CreateNamespace(config, internal.Config.NameSpace)
+		if !errors.IsAlreadyExists(err) {
+			Expect(err).ToNot(HaveOccurred())
+		}
+		Expect(ns).ToNot(BeNil())
+		_ = testutils.SaveAsJsonToArtifactsDir(ns, "namespace.json")
+	})
+
 	Context("from certified operators", Ordered, func() {
 		BeforeAll(func() {
 			if testutils.SkipTestIfEnvVarSet(deployedFromMaster, true) {
@@ -141,14 +150,11 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 		It("deploy GPU ClusterPolicy", func() {
 			almExample, err := ocputils.GetAlmExamples(clusterServiceVersion)
 			Expect(err).ToNot(HaveOccurred())
-			cpJson := unstructured.UnstructuredList{}
-			err = json.Unmarshal([]byte(almExample), &cpJson.Items)
+			unstructObj, err := getUnstructuredFromAlmExample(almExample)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(cpJson.Items).ToNot(BeEmpty())
-			unstructObj := cpJson.Items[0]
 			unstructObj.SetNamespace(namespace)
 
-			resp, err := ocputils.CreateDynamicResource(config, gpuv1.GroupVersion.WithResource("clusterpolicies"), &unstructObj, "")
+			resp, err := ocputils.CreateDynamicResource(config, gpuv1.GroupVersion.WithResource("clusterpolicies"), unstructObj, "")
 
 			Expect(err).ToNot(HaveOccurred())
 			respCp := gpuv1.ClusterPolicy{}

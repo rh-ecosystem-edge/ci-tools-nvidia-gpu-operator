@@ -1,10 +1,13 @@
 package setup
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/rest"
 
 	"ci-tools-nvidia-gpu-operator/internal"
@@ -27,4 +30,16 @@ func waitForCsvPhase(config *rest.Config, namespace string, labelSelector string
 		return csv.Status.Phase == phase
 	}, 40, 30*time.Second)
 	return csv, err
+}
+
+func getUnstructuredFromAlmExample(almExample string) (*unstructured.Unstructured, error) {
+	unstructuredList := &unstructured.UnstructuredList{}
+	err := json.Unmarshal([]byte(almExample), &unstructuredList.Items)
+	if err != nil {
+		return nil, err
+	}
+	if len(unstructuredList.Items) <= 0 {
+		return nil, errors.New("failed to get alm examples")
+	}
+	return &unstructuredList.Items[0], nil
 }
