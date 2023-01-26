@@ -13,7 +13,7 @@ function test_ocp_connection() {
     print_test_title "${FUNCNAME[0]}"
     ART_DIR=$(dirgen "${FUNCNAME[0]}")
     GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
-    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./setup/ || error_and_exit "${FUNCNAME[0]} Test Failed." 1
+    (ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./setup/ && create_dashboard_ocp_version "${ART_DIR}") || error_and_exit "${FUNCNAME[0]} Test Failed." 1
 }
 
 function deploy_nfd_operator() {
@@ -73,7 +73,7 @@ function wait_for_gpu_operator() {
     print_test_title "${FUNCNAME[0]}"
     ART_DIR=$(dirgen "${FUNCNAME[0]}")
     GINKGO_ARGS=$(ginko_args "${ART_DIR}" "${FUNCNAME[0]}")
-    ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ || error_and_exit "${FUNCNAME[0]} Test Failed." 11
+    (ARTIFACT_DIR=$ART_DIR ginkgo ${GINKGO_ARGS} ./tests/ && create_dashboard_operator_version "${ART_DIR}") || error_and_exit "${FUNCNAME[0]} Test Failed." 11
 }
 
 function run_gpu_workload() {
@@ -161,6 +161,17 @@ function ginko_args() {
 OUTPUT_FILE="${ARTIFACT_DIR}/output-${1}.log"
 mkdir -p "${ARTIFACT_DIR}"
 bash "$THIS_DIR/print_title.sh" | tee "${OUTPUT_FILE}"
+
+## CI Dashboad files
+git rev-parse --short HEAD > "${ARTIFACT_DIR}/ci_artifact.git_version"
+function create_dashboard_ocp_version() {
+    connection_dir=$1
+    tail -1 "${connection_dir}/OCP_Version.txt" | tr ' ' '\n' | tail -1 > "${ARTIFACT_DIR}/ocp.version"
+}
+function create_dashboard_operator_version() {
+    wait_for_gpu_operator_dir=$1
+    cp "${wait_for_gpu_operator_dir}/gpu_operator_version.txt" "${ARTIFACT_DIR}/operator.version"
+}
 
 case "$1" in
 #####################
