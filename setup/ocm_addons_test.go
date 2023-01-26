@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -52,11 +51,8 @@ var _ = Describe("ocm_addons_setup :", Ordered, func() {
 		ocmClusterId *string
 	)
 	BeforeAll(func() {
-		kubeconfig := internal.Config.KubeconfigPath
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
 
 		osde2eSecret, err := ocputils.GetSecret(config, osde2eSecretNamespace, osde2eSecretName)
 		Expect(err).ToNot(HaveOccurred())

@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -25,7 +24,6 @@ const (
 var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 	var (
 		config              *rest.Config
-		kubeconfig          string
 		nfdOpName           string
 		nfdChannel          string
 		nfdCatalogSource    string
@@ -36,7 +34,6 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 	)
 
 	BeforeAll(func() {
-		kubeconfig = internal.Config.KubeconfigPath
 		nfdOpName = "nfd"
 		nfdChannel = "unset"
 		nfdCatalogSource = "unset"
@@ -44,9 +41,7 @@ var _ = Describe("deploy_nfd_operator :", Ordered, func() {
 		nfdCsvLabelSelector = "unset"
 		nfdPkgNS = "openshift-marketplace"
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
 	})
 
 	It("check NFD PackageManifest", func() {

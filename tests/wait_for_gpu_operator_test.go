@@ -11,7 +11,6 @@ import (
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -19,7 +18,6 @@ import (
 )
 
 var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
-	kubeconfig := internal.Config.KubeconfigPath
 	var (
 		config         *rest.Config
 		namespace      string
@@ -28,9 +26,7 @@ var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
 	)
 
 	BeforeAll(func() {
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
 	})
 
 	It("GPU operator should be installed successfully", func() {

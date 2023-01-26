@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -17,7 +16,6 @@ import (
 )
 
 var _ = Describe("gpu_addon_must_gather :", Ordered, func() {
-	kubeconfig := internal.Config.KubeconfigPath
 	var (
 		config          *rest.Config
 		gpuAddonCsv     *operatorsv1alpha1.ClusterServiceVersion
@@ -25,9 +23,8 @@ var _ = Describe("gpu_addon_must_gather :", Ordered, func() {
 	)
 
 	BeforeAll(func() {
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
+
 	})
 	It("fetch must gather image from csv", func() {
 		csvs, err := ocputils.GetCsvsByLabel(config, "", "")
