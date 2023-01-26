@@ -12,7 +12,6 @@ import (
 	machinesetv1b1 "github.com/openshift/api/machine/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -24,20 +23,17 @@ var _ = Describe("scale_aws_gpu_nodes : ", Ordered, func() {
 	var (
 		config        *rest.Config
 		gpuMachineset *machinesetv1b1.MachineSet
-		kubeconfig    string
 		instanceType  string
 		namespace     string
 		replicas      int32
 	)
 
 	BeforeAll(func() {
-		kubeconfig = internal.Config.KubeconfigPath
 		instanceType = internal.Config.CiMachineSetInstanceType
 		namespace = "openshift-machine-api"
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
+
 		r, err := strconv.ParseInt(internal.Config.CiMachineSetReplicas, 10, 32)
 		Expect(err).ToNot(HaveOccurred(), "Invalid replicas value")
 		replicas = int32(r)

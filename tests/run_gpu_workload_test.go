@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -22,21 +21,17 @@ import (
 var _ = Describe("run_gpu_workload :", Ordered, func() {
 	var (
 		config        *rest.Config
-		kubeconfig    string
 		namespace     string
 		gpuBurnImage  string
 		daemonsetName string
 	)
 
 	BeforeAll(func() {
-		kubeconfig = internal.Config.KubeconfigPath
 		namespace = "gpu-burn-test"
 		gpuBurnImage = "quay.io/openshift-psap/gpu-burn"
 		daemonsetName = "gpu-burn-daemonset"
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.GetClientConfig()
 	})
 
 	It("create gpu-burn namespace", func() {

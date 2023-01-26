@@ -13,7 +13,6 @@ import (
 	pkgmanifestv1 "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -25,7 +24,6 @@ const (
 )
 
 var _ = Describe("deploy_gpu_operator :", Ordered, func() {
-	kubeconfig := internal.Config.KubeconfigPath
 	var (
 		config                *rest.Config
 		pkg                   *pkgmanifestv1.PackageManifest
@@ -41,9 +39,7 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 		catalogSourceNS = "openshift-marketplace"
 		operatorPkgName = "gpu-operator-certified"
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
+		config = internal.Config.ClientConfig
 	})
 
 	It("ensure namespace exists", func() {

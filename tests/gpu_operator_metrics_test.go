@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"ci-tools-nvidia-gpu-operator/internal"
 	"ci-tools-nvidia-gpu-operator/ocputils"
@@ -32,17 +31,13 @@ var _ = Describe("test_gpu_operator_metrics :", Ordered, func() {
 	var (
 		config         *rest.Config
 		gpuOperatorCsv *operatorsv1alpha1.ClusterServiceVersion = nil
-		kubeconfig     string
 		namespace      string
 		gpuOpVersion   *version.OperatorVersion
 	)
 
 	BeforeAll(func() {
-		kubeconfig = internal.Config.KubeconfigPath
+		config = internal.GetClientConfig()
 
-		var err error
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("capture GPU Operator namespace and version", func() {
