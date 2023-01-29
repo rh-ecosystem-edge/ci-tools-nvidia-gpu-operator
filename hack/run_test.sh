@@ -121,6 +121,9 @@ function clean_artifact_dir() {
     rm -rf "${ARTIFACT_DIR}"/SUCCESS
     rm -rf "${ARTIFACT_DIR}"/RETURN_CODE
     rm -rf "${ARTIFACT_DIR}"/*.log
+    rm -rf "${ARTIFACT_DIR}"/*.xml
+    rm -rf "${ARTIFACT_DIR}"/*.version
+    rm -rf "${ARTIFACT_DIR}"/*.git_version
     ls -d "${ARTIFACT_DIR}"/* | grep -P "[0-9]{10}_" | xargs  rm -rf 
 }
 
@@ -197,6 +200,9 @@ case "$1" in
     clean_artifact_dir) "$@";exit;;
     *) error_and_exit "Invalid operation $1." 44 | tee -a "${OUTPUT_FILE}";;
 esac
+
+# OSDE2E requires JUnit files to be in the atrifacts directory
+mv "${ARTIFACT_DIR}"/*/*.xml "${ARTIFACT_DIR}"
 
 if [[ ! -f "${ARTIFACT_DIR}/FAIL" ]]; then
     echo "SUCCESS" > "${ARTIFACT_DIR}/SUCCESS"
