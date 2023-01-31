@@ -1,6 +1,6 @@
 module ci-tools-nvidia-gpu-operator
 
-go 1.19
+go 1.18
 
 require (
 	github.com/NVIDIA/gpu-operator v1.8.3-0.20220930173732-1d8f71f15759
