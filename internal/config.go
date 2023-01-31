@@ -19,7 +19,7 @@ type config struct {
 }
 
 var Config = config{
-	NameSpace:                GetVarDefault("WORKING_NAMESPACE", "gpu-operator-test"),
+	NameSpace:                GetVarDefault("WORKING_NAMESPACE", "nvidia-gpu-operator"),
 	GpuOperatorChannel:       GetVarDefault("GPU_CHANNEL", ""),
 	KubeconfigPath:           GetVarDefault("KUBECONFIG", ".kubeconfig"),
 	ArtifactDir:              GetVarDefault("ARTIFACT_DIR", "/tmp/gpu-test"),
