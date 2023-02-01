@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ func GetSecretValue(secret *corev1.Secret, data string, isGziped bool) (*string,
 		if err != nil {
 			return nil, err
 		}
-		val, err = ioutil.ReadAll(gzReader)
+		val, err = io.ReadAll(gzReader)
 		if err != nil {
 			return nil, err
 		}
