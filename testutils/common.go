@@ -3,7 +3,6 @@ package testutils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -35,7 +34,7 @@ func ExecWithRetryBackoff(debugTag string, fn TestFunc, maxRetries int, interval
 func SaveToArtifactsDir(data []byte, filename string) error {
 	filepath := path.Join(internal.Config.ArtifactDir, filename)
 	Printf("SaveToArtifactsDir", "Writing data to file: %v", filepath)
-	return ioutil.WriteFile(filepath, data, 0644)
+	return os.WriteFile(filepath, data, 0644)
 }
 
 func SaveAsJsonToArtifactsDir(obj interface{}, filename string) error {
