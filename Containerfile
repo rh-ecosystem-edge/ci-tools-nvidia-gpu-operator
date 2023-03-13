@@ -14,7 +14,7 @@ RUN cd /usr/local/bin \
 
 # Install dependencies: `golangci-lint & ginkgo`
 RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
-RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.0
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.1
 
 RUN mkdir /test-run-results && chmod 777 /test-run-results
 
