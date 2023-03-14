@@ -29,8 +29,8 @@ var Config = config{
 }
 
 func GetVarDefault(evar string, _default string) string {
-	if _, check := os.LookupEnv(evar); check {
-		return os.Getenv(evar)
+	if val , ok := os.LookupEnv(evar); ok {
+		return val
 	}
 	return _default
 }
