@@ -67,6 +67,12 @@ osde2e_test: test_ocp_connection
 gpu_addon_must_gather:
 	@./hack/run_test.sh gpu_addon_must_gather
 
+.PHONY: unittest
+unittest:
+	@for folder in "internal" "ocputils"; do \
+		go test ./$$folder -count=1; \
+	done
+
 .PHONY: lint
 lint:
 	golangci-lint run -v

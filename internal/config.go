@@ -29,11 +29,10 @@ var Config = config{
 }
 
 func GetVarDefault(evar string, _default string) string {
-	val := os.Getenv(evar)
-	if len(val) == 0 {
-		return _default
+	if val, ok := os.LookupEnv(evar); ok && len(val) > 0 {
+		return val
 	}
-	return val
+	return _default
 }
 
 func GetClientConfig() *rest.Config {
