@@ -1,4 +1,4 @@
-# github.com/NVIDIA/gpu-operator v1.8.3-0.20220930173732-1d8f71f15759
+# github.com/NVIDIA/gpu-operator v1.11.1
 ## explicit; go 1.17
 github.com/NVIDIA/gpu-operator/api/v1
 # github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d
@@ -184,10 +184,6 @@ github.com/operator-framework/operator-registry/pkg/api
 github.com/operator-framework/operator-registry/pkg/image
 github.com/operator-framework/operator-registry/pkg/lib/semver
 github.com/operator-framework/operator-registry/pkg/registry
-# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.56.3
-## explicit; go 1.17
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1
 # github.com/sirupsen/logrus v1.8.1
 ## explicit; go 1.13
 github.com/sirupsen/logrus

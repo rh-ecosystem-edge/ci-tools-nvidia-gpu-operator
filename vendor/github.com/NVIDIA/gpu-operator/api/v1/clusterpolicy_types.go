@@ -23,7 +23,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -538,24 +537,10 @@ type ToolkitSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment Variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// Toolkit install directory on the host
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=/usr/local/nvidia
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Toolkit install directory on the host"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	InstallDir string `json:"installDir,omitempty"`
 }
 
 // DevicePluginSpec defines the properties for NVIDIA Device Plugin deployment
 type DevicePluginSpec struct {
-	// Enabled indicates if deployment of NVIDIA Device Plugin through operator is enabled
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable NVIDIA Device Plugin deployment through GPU Operator"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// NVIDIA Device Plugin image repository
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
@@ -677,12 +662,6 @@ type SandboxDevicePluginSpec struct {
 
 // DCGMExporterSpec defines the properties for NVIDIA DCGM Exporter deployment
 type DCGMExporterSpec struct {
-	// Enabled indicates if deployment of NVIDIA DCGM Exporter through operator is enabled
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable NVIDIA DCGM Exporter deployment through GPU Operator"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// NVIDIA DCGM Exporter image repository
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
@@ -731,11 +710,6 @@ type DCGMExporterSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom Metrics Configuration For DCGM Exporter"
 	MetricsConfig *DCGMExporterMetricsConfig `json:"config,omitempty"`
-
-	// Optional: ServiceMonitor configuration for NVIDIA DCGM Exporter
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ServiceMonitor configuration for NVIDIA DCGM Exporter"
-	ServiceMonitor *DCGMExporterServiceMonitorConfig `json:"serviceMonitor,omitempty"`
 }
 
 // DCGMExporterMetricsConfig defines metrics to be collected by NVIDIA DCGM Exporter
@@ -746,35 +720,6 @@ type DCGMExporterMetricsConfig struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ConfigMap name with file dcgm-metrics.csv"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Name string `json:"name,omitempty"`
-}
-
-// DCGMExporterServiceMonitorConfig defines configuration options for the ServiceMonitor
-// deployed for DCGM Exporter
-type DCGMExporterServiceMonitorConfig struct {
-	// Enabled indicates if ServiceMonitor is deployed for NVIDIA DCGM Exporter
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable deployment of NVIDIA DCGM Exporter ServiceMonitor"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// Interval which metrics should be scraped from NVIDIA DCGM Exporter. If not specified Prometheus’ global scrape interval is used.
-	// Supported units: y, w, d, h, m, s, ms
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Interval which metrics should be scraped from NVDIA DCGM Exporter"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	Interval promv1.Duration `json:"interval,omitempty"`
-
-	// HonorLabels chooses the metric’s labels on collisions with target labels.
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Choose the metric's label on collisions with target labels"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	HonorLabels *bool `json:"honorLabels,omitempty"`
-
-	// AdditionalLabels to add to ServiceMonitor instance for NVIDIA DCGM Exporter
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Additional labels to add to ServiceMonitor instance for NVIDIA DCGM Exporter"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	AdditionalLabels map[string]string `json:"additionalLabels,omitempty"`
 }
 
 // DCGMSpec defines the properties for NVIDIA DCGM deployment
@@ -951,12 +896,6 @@ type RollingUpdateSpec struct {
 
 // GPUFeatureDiscoverySpec defines the properties for GPU Feature Discovery Plugin
 type GPUFeatureDiscoverySpec struct {
-	// Enabled indicates if deployment of GPU Feature Discovery Plugin is enabled.
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable GPU Feature Discovery Plugin deployment through GPU Operator"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// GFD image repository
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
@@ -1264,6 +1203,7 @@ type VGPUDeviceManagerSpec struct {
 type VGPUDevicesConfigSpec struct {
 	// ConfigMap name
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=vgpu-devices-config
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ConfigMap Name"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -1300,8 +1240,6 @@ const (
 	Ready State = "ready"
 	// NotReady indicates some/all components of ClusterPolicy are not ready
 	NotReady State = "notReady"
-	// Disabled indicates if the state is disabled
-	Disabled State = "disabled"
 )
 
 // ClusterPolicyStatus defines the observed state of ClusterPolicy
@@ -1447,40 +1385,13 @@ func ImagePullPolicy(pullPolicy string) corev1.PullPolicy {
 	return imagePullPolicy
 }
 
-// IsEnabled returns true if driver install is enabled(default) through gpu-operator
-func (d *DriverSpec) IsEnabled() bool {
+// IsDriverEnabled returns true if driver install is enabled(default) through gpu-operator
+func (d *DriverSpec) IsDriverEnabled() bool {
 	if d.Enabled == nil {
 		// default is true if not specified by user
 		return true
 	}
 	return *d.Enabled
-}
-
-// IsEnabled returns true if device-plugin is enabled(default) through gpu-operator
-func (p *DevicePluginSpec) IsEnabled() bool {
-	if p.Enabled == nil {
-		// default is true if not specified by user
-		return true
-	}
-	return *p.Enabled
-}
-
-// IsEnabled returns true if dcgm-exporter is enabled(default) through gpu-operator
-func (e *DCGMExporterSpec) IsEnabled() bool {
-	if e.Enabled == nil {
-		// default is true if not specified by user
-		return true
-	}
-	return *e.Enabled
-}
-
-// IsEnabled returns true if gpu-feature-discovery is enabled(default) through gpu-operator
-func (g *GPUFeatureDiscoverySpec) IsEnabled() bool {
-	if g.Enabled == nil {
-		// default is true if not specified by user
-		return true
-	}
-	return *g.Enabled
 }
 
 // IsEnabled returns true if VFIO-PCI Manager install is enabled through gpu-operator
@@ -1510,8 +1421,8 @@ func (v *VGPUDeviceManagerSpec) IsEnabled() bool {
 	return *v.Enabled
 }
 
-// IsEnabled returns true if container-toolkit install is enabled(default) through gpu-operator
-func (t *ToolkitSpec) IsEnabled() bool {
+// IsToolkitEnabled returns true if container-toolkit install is enabled(default) through gpu-operator
+func (t *ToolkitSpec) IsToolkitEnabled() bool {
 	if t.Enabled == nil {
 		// default is true if not specified by user
 		return true
@@ -1547,8 +1458,8 @@ func (p *PSPSpec) IsEnabled() bool {
 	return *p.Enabled
 }
 
-// IsEnabled returns true if mig-manager is enabled(default) through gpu-operator
-func (m *MIGManagerSpec) IsEnabled() bool {
+// IsMIGManagerEnabled returns true if mig-manager is enabled(default) through gpu-operator
+func (m *MIGManagerSpec) IsMIGManagerEnabled() bool {
 	if m.Enabled == nil {
 		// default is true if not specified by user
 		return true
@@ -1556,9 +1467,9 @@ func (m *MIGManagerSpec) IsEnabled() bool {
 	return *m.Enabled
 }
 
-// IsEnabled returns true if node-status-exporter is
+// IsNodeStatusExporterEnabled returns true if node-status-exporter is
 // enabled through gpu-operator
-func (m *NodeStatusExporterSpec) IsEnabled() bool {
+func (m *NodeStatusExporterSpec) IsNodeStatusExporterEnabled() bool {
 	if m.Enabled == nil {
 		// default is false if not specified by user
 		return false
@@ -1591,15 +1502,6 @@ func (dcgm *DCGMSpec) IsEnabled() bool {
 		return true
 	}
 	return *dcgm.Enabled
-}
-
-// IsEnabled returns true if ServiceMonitor for DCGM Exporter is enabled through gpu-operator
-func (sm *DCGMExporterServiceMonitorConfig) IsEnabled() bool {
-	if sm.Enabled == nil {
-		// ServiceMonitor for DCGM Exporter is disabled by default
-		return false
-	}
-	return *sm.Enabled
 }
 
 // IsNLSEnabled returns true if NLS should be used for licensing the driver
