@@ -74,10 +74,10 @@ func TestGetVarDefault(t *testing.T) {
 func TestGetClientConfig(t *testing.T) {
 	// create fake kubeconfig file
 	CreateFakeKubeConfig()
-
+	defer os.Remove(".kubeconfig")
 	config, expected := GetClientConfig(), "*rest.Config"
 	if (fmt.Sprintf("%T", config)) != "*rest.Config" {
 		t.Errorf("GetClientConfig returned wrong config, expected: %v, got: %T", expected, config)
 	}
-	os.Remove(".kubeconfig")
+	
 }
