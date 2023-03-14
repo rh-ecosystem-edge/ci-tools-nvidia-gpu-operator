@@ -42,7 +42,8 @@ users:
 	defer file.Close()
 	_, err = file.Write(data)
 	Check(err, "Cannot Write file .kubeconfig")
-	file.Sync()
+	err = file.Sync()
+	Check(err, "Failed to flush file data")
 
 }
 
