@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/NVIDIA/gpu-operator v1.8.3-0.20220930173732-1d8f71f15759
 	github.com/blang/semver/v4 v4.0.0
-	github.com/onsi/ginkgo/v2 v2.9.1
+	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
 	github.com/openshift/api v0.0.0-20221116152553-4b67c2b2bb1e
 	github.com/openshift/client-go v0.0.0-20221019143426-16aed247da5c
@@ -27,7 +27,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
