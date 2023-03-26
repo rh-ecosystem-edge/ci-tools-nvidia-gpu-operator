@@ -3,7 +3,7 @@ module ci-tools-nvidia-gpu-operator
 go 1.18
 
 require (
-	github.com/NVIDIA/gpu-operator v1.8.3-0.20220930173732-1d8f71f15759
+	github.com/NVIDIA/gpu-operator v1.11.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
@@ -46,7 +46,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/operator-framework/operator-registry v1.17.5 // indirect
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.56.3 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.8.0 // indirect
