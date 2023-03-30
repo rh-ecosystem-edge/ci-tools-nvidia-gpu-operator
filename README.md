@@ -14,4 +14,7 @@ $ make deploy_gpu_operator CHANNEL=v1.10
 $ make e2e_gpu_test
 # scale gpu machine set
 $ make scale_aws_gpu_nodes [REPLICAS=1 INSTANCE_TYPE=g4dn.xlarge]
+# run e2e test on a gpu operator bundle
+$ make bundle_e2e_gpu_test BUNDLE=my_bundle.to/test:latest
+
 ```

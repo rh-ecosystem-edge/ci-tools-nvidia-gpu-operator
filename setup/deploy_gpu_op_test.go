@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	deployedFromMaster = "DEPLOYED_FROM_MASTER"
+	deployedFromBundle = "DEPLOYED_FROM_BUNDLE"
 )
 
 var _ = Describe("deploy_gpu_operator :", Ordered, func() {
@@ -53,7 +53,7 @@ var _ = Describe("deploy_gpu_operator :", Ordered, func() {
 
 	Context("from certified operators", Ordered, func() {
 		BeforeAll(func() {
-			if testutils.SkipTestIfEnvVarSet(deployedFromMaster, true) {
+			if testutils.SkipTestIfEnvVarSet(deployedFromBundle, true) {
 				return
 			}
 		})

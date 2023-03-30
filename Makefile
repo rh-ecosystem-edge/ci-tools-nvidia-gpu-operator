@@ -43,6 +43,13 @@ e2e_gpu_test: deploy_gpu_operator gpu_full_test
 .PHONY: master_e2e_gpu_test
 master_e2e_gpu_test: deploy_gpu_operator_master gpu_full_test
 
+.PHONY: bundle_e2e_gpu_test
+bundle_e2e_gpu_test: deploy_gpu_from_bundle gpu_full_test
+
+.PHONY: deploy_gpu_from_bundle
+deploy_gpu_from_bundle: deploy_nfd_operator
+	@./hack/run_test.sh deploy_gpu_from_bundle $(GPU_BUNDLE)
+
 .PHONY: deploy_gpu_operator_master
 deploy_gpu_operator_master: deploy_nfd_operator
 	@./hack/run_test.sh deploy_gpu_operator_master
