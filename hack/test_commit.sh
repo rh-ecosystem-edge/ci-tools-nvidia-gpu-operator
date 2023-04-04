@@ -6,7 +6,7 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-echo "===> Runnin test_command.sh"
+echo "===> Running test_command.sh"
 
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
