@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	no bool = false
+	no  bool = false
+	yes bool = true
 )
 
 func newBurnDaemonSet(namespace string, name string, gpuBurnImage string) *appsv1.DaemonSet {
@@ -37,6 +38,12 @@ func newBurnDaemonSet(namespace string, name string, gpuBurnImage string) *appsv
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: &yes,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 					Tolerations: []corev1.Toleration{
 						{
 							Operator: corev1.TolerationOpExists,
@@ -53,6 +60,11 @@ func newBurnDaemonSet(namespace string, name string, gpuBurnImage string) *appsv
 							ImagePullPolicy: corev1.PullAlways,
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: &no,
+								Capabilities: &corev1.Capabilities{
+									Drop: []corev1.Capability{
+										"ALL",
+									},
+								},
 							},
 							Name: "gpu-burn-ctr",
 							Command: []string{

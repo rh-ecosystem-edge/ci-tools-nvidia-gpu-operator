@@ -82,9 +82,9 @@ var _ = Describe("run_gpu_workload :", Ordered, func() {
 			if err != nil {
 				return false
 			}
-			return ds.Status.NumberReady == ds.Status.DesiredNumberScheduled
+			return ds.Status.DesiredNumberScheduled != 0 && ds.Status.NumberReady == ds.Status.DesiredNumberScheduled
 		}, 20, 30*time.Second)
-		Expect(err).ToNot(HaveOccurred(), "Desired != Ready")
+		Expect(err).ToNot(HaveOccurred(), "Desired != Ready or desired is 0.")
 		err = testutils.SaveAsJsonToArtifactsDir(ds, "gpu_burn_daemonset.json")
 		Expect(err).ToNot(HaveOccurred())
 	})
