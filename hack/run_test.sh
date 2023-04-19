@@ -4,7 +4,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 export ARTIFACT_DIR=${ARTIFACT_DIR:="/tmp/gpu-test"}
 export KUBECONFIG=${KUBECONFIG:="$HOME/.kube/config"}
-export GPU_OPERATOR_MASTER_BUNDLE="registry.gitlab.com/nvidia/kubernetes/gpu-operator/staging/gpu-operator-bundle:master-latest"
+export GPU_OPERATOR_MASTER_BUNDLE="registry.gitlab.com/nvidia/kubernetes/gpu-operator/staging/gpu-operator-bundle:release-23.03-latest"
 
 #####################
 ## Setup functions ##
