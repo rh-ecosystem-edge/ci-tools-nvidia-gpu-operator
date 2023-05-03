@@ -40,9 +40,6 @@ func newBurnDaemonSet(namespace string, name string, gpuBurnImage string) *appsv
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &yes,
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
-						},
 					},
 					Tolerations: []corev1.Toleration{
 						{
