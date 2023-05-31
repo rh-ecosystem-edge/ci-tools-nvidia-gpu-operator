@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/go-toolset:1.18
+FROM registry.access.redhat.com/ubi9/go-toolset:1.19
 
 USER root
 
