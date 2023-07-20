@@ -13,7 +13,7 @@ require (
 	github.com/operator-framework/api v0.17.6
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	k8s.io/api v0.27.3
-	k8s.io/apimachinery v0.27.3
+	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.3
 )
 
