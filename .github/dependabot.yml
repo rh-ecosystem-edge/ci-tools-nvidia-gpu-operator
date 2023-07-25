@@ -9,6 +9,15 @@ updates:
     directory: /
     schedule:
       interval: daily
+    groups:
+      k8s:
+        patterns:
+          - "k8s.io/*"
+      gomega:
+        patterns:
+          - "github.com/onsi/ginkgo"
+          - "github.com/onsi/gomega"
+
 
   - package-ecosystem: github-actions
     directory: /
