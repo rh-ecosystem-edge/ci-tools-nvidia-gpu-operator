@@ -12,9 +12,9 @@ require (
 	github.com/openshift/cluster-nfd-operator v0.0.0-20230330091426-c1706d5146e0
 	github.com/operator-framework/api v0.17.7
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
-	k8s.io/api v0.28.0
-	k8s.io/apimachinery v0.28.0
-	k8s.io/client-go v0.28.0
+	k8s.io/api v0.28.1
+	k8s.io/apimachinery v0.28.1
+	k8s.io/client-go v0.28.1
 )
 
 require (
