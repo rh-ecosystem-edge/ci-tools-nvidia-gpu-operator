@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/NVIDIA/gpu-operator v1.11.1
 	github.com/blang/semver/v4 v4.0.0
-	github.com/onsi/ginkgo/v2 v2.12.0
+	github.com/onsi/ginkgo/v2 v2.12.1
 	github.com/onsi/gomega v1.27.10
 	github.com/openshift/api v0.0.0-20230530201632-83abb00e2684
 	github.com/openshift/client-go v0.0.0-20221019143426-16aed247da5c
@@ -54,7 +54,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
