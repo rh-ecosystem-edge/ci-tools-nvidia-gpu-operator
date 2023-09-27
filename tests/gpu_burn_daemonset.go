@@ -56,6 +56,10 @@ func newBurnDaemonSet(namespace string, name string, gpuBurnImage string) *appsv
 							Image:           gpuBurnImage,
 							ImagePullPolicy: corev1.PullAlways,
 							SecurityContext: &corev1.SecurityContext{
+								RunAsNonRoot: &yes,
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
 								AllowPrivilegeEscalation: &no,
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{
