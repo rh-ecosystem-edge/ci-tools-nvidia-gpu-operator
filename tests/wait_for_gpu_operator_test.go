@@ -100,27 +100,61 @@ var _ = Describe("wait_for_gpu_operator :", Ordered, func() {
 	})
 
 	It("nvidia-operator-validator Daemonset should be ready", func() {
-		validatorDs, err := ocputils.GetDaemonset(config, namespace, "nvidia-operator-validator")
-		Expect(err).ToNot(HaveOccurred())
-
-		if validatorDs.Status.NumberReady != validatorDs.Status.DesiredNumberScheduled {
-			err = testutils.ExecWithRetryBackoff("Wait for nvidia-operator-validator daemonset", func() bool {
-				ds, err := ocputils.GetDaemonset(config, namespace, "nvidia-operator-validator")
-				if err != nil {
-					return false
-				}
-				validatorDs = ds
-				return ds.Status.NumberReady == ds.Status.DesiredNumberScheduled
-			}, 20, 30*time.Second)
+		err := testutils.ExecWithRetryBackoff("Wait for nvidia-operator-validator daemonset", func() bool {
+			ds, err := ocputils.GetDaemonset(config, namespace, "nvidia-operator-validator")
+			if err != nil || ds.Status.NumberReady != ds.Status.DesiredNumberScheduled {
+				return false
+			}
+			dsJson, err := json.MarshalIndent(ds, "", " ")
 			Expect(err).ToNot(HaveOccurred())
-		}
-
-		dsJson, err := json.MarshalIndent(validatorDs, "", " ")
+			err = testutils.SaveToArtifactsDir(dsJson, "nvidia-operator-validator-ds.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ds.Status.NumberReady).To(Equal(ds.Status.DesiredNumberScheduled), "Validator DS is not ready.")
+			return true
+		}, 20, 30*time.Second)
 		Expect(err).ToNot(HaveOccurred())
-		err = testutils.SaveToArtifactsDir(dsJson, "nvidia-operator-validator-ds.json")
-		Expect(err).ToNot(HaveOccurred())
+	})
 
-		Expect(validatorDs.Status.NumberReady).To(Equal(validatorDs.Status.DesiredNumberScheduled), "Validator DS is not ready.")
+	It("GPU nodes should be labeled with nvidia.com/gpu.present=true", func() {
+		err := testutils.ExecWithRetryBackoff("Wait for nodes with 'nvidia.com/gpu.present=true' label", func() bool {
+			resp, err := ocputils.GetNodesByLabel(config, "nvidia.com/gpu.present=true")
+			if err != nil {
+				return false
+			}
+			if len(resp.Items) > 0 {
+				testutils.Printf("Info", "found #%v nodes with 'nvidia.com/gpu.present=true'", len(resp.Items))
+				_ = testutils.SaveAsJsonToArtifactsDir(resp.Items, "gpu_label_found.json")
+				return true
+			}
+			return false
+		}, 20, 30*time.Second)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("GPU nodes should have GPU capacity", func() {
+		err := testutils.ExecWithRetryBackoff("Wait for nodes with nvidia.com/gpu.present label to have GPU capacity", func() bool {
+			resp, err := ocputils.GetNodesByLabel(config, "nvidia.com/gpu.present=true")
+			if err != nil || len(resp.Items) == 0 {
+				return false
+			}
+			val, ok := resp.Items[0].Status.Capacity["nvidia.com/gpu"]
+			if !ok {
+				return false
+			}
+
+			testutils.Printf("Info", "found capacity 'nvidia.com/gpu=%s' on node %s", val.String(), resp.Items[0].Name)
+			i, ok := val.AsInt64()
+			if !ok {
+				testutils.Printf("Error", "unexpected value of nvidia.com/gpu capacity: %s", val.String())
+				return false
+			}
+			if i > 0 {
+				_ = testutils.SaveAsJsonToArtifactsDir(resp.Items[0], "gpu_capacity_found.json")
+				return true
+			}
+			return false
+		}, 20, 30*time.Second)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("capture namespace", func() {
