@@ -51,6 +51,9 @@ function scale_aws_gpu_nodes() {
 function deploy_gpu_operator_master() {
     print_test_title "${FUNCNAME[0]}"
     ART_DIR=$(dirgen "${FUNCNAME[0]}")
+    MASTER_FILE="${ARTIFACT_DIR}/MASTER_BUNDLE"
+    echo "=> Creating master file @ ${MASTER_FILE}"
+    touch "${MASTER_FILE}"
     deploy_gpu_from_bundle "${GPU_OPERATOR_MASTER_BUNDLE}" || error_and_exit "Failed to deploy bundle" 5
 }
 
@@ -137,7 +140,6 @@ function clean_artifact_dir() {
     ls -d "${ARTIFACT_DIR}"/* | grep -P "[0-9]{10}_" | xargs  rm -rf
 }
 
-
 function print_test_title(){
     echo
     echo "==> Running Test: ${1}"
@@ -184,6 +186,13 @@ function create_dashboard_ocp_version() {
 function create_dashboard_operator_version() {
     wait_for_gpu_operator_dir=$1
     cp "${wait_for_gpu_operator_dir}/gpu_operator_version.txt" "${ARTIFACT_DIR}/operator.version"
+    # In our CI dashboard we would like to see that this was a master test
+    MASTER_FILE="${ARTIFACT_DIR}/MASTER_BUNDLE"
+    if [[ -f "${MASTER_FILE}" ]]; then
+        echo "==> master file found. adding 'master-' prefix to operator.version"
+        rm "${MASTER_FILE}"
+        echo "master-$(cat "${ARTIFACT_DIR}/operator.version")" > "${ARTIFACT_DIR}/operator.version"
+    fi
 }
 
 case "$1" in
@@ -221,6 +230,4 @@ if [[ ! -f "${ARTIFACT_DIR}/FAIL" ]]; then
 else
     exit $(cat "${ARTIFACT_DIR}/RETURN_CODE")
 fi
-
-
 
