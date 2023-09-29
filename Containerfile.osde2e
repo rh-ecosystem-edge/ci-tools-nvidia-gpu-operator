@@ -16,7 +16,7 @@ ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp
 RUN curl -L ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install dependencies: `ginkgo`
-RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.12.0
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.12.1
 
 RUN mkdir /test-run-results && chmod 777 /test-run-results
 
