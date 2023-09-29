@@ -6,7 +6,7 @@ require (
 	github.com/NVIDIA/gpu-operator v1.11.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/onsi/ginkgo/v2 v2.12.0
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.28.0
 	github.com/openshift/api v0.0.0-20230530201632-83abb00e2684
 	github.com/openshift/client-go v0.0.0-20221019143426-16aed247da5c
 	github.com/openshift/cluster-nfd-operator v0.0.0-20230330091426-c1706d5146e0
