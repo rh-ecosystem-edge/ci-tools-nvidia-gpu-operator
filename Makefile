@@ -82,7 +82,7 @@ unittest:
 
 .PHONY: lint
 lint:
-	golangci-lint run -v
+	golangci-lint run -v --timeout=3m
 
 
 .PHONY: default

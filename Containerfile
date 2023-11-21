@@ -1,11 +1,11 @@
-FROM registry.access.redhat.com/ubi9/go-toolset:1.19
+FROM registry.access.redhat.com/ubi9/go-toolset:1.20
 
 USER root
 
 WORKDIR /test
 
 # Install dependencies: `operator-sdk`
-ARG OPERATOR_SDK_VERSION=v1.26.0
+ARG OPERATOR_SDK_VERSION=v1.32.0
 ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
 RUN cd /usr/local/bin \
     && curl -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
@@ -13,8 +13,8 @@ RUN cd /usr/local/bin \
     && chmod +x operator-sdk
 
 # Install dependencies: `golangci-lint & ginkgo`
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
-RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.12.1
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
 
 RUN mkdir /test-run-results && chmod 777 /test-run-results
 
