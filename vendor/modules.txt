@@ -165,8 +165,8 @@ github.com/openshift/client-go/machine/clientset/versioned/typed/machine/v1beta1
 # github.com/openshift/cluster-nfd-operator v0.0.0-20230330091426-c1706d5146e0
 ## explicit; go 1.19
 github.com/openshift/cluster-nfd-operator/api/v1
-# github.com/operator-framework/api v0.21.0
-## explicit; go 1.20
+# github.com/operator-framework/api v0.22.0
+## explicit; go 1.21
 github.com/operator-framework/api/pkg/lib/version
 github.com/operator-framework/api/pkg/operators
 github.com/operator-framework/api/pkg/operators/v1
