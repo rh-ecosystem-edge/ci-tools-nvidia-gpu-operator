@@ -1,5 +1,9 @@
 # CI Tools for NVIDIA GPU Operator
 
+**WARNING:** This repository is deprecated. The new repository for NVIDIA GPU testing is [nvidia-ci](https://github.com/rh-ecosystem-edge/nvidia-ci).
+
+---
+
 This repository contains a collection of tests for the NVIDIA GPU Operator.
 Including setup functions to prepare an OpenShift cluster for testing purposes.
 
